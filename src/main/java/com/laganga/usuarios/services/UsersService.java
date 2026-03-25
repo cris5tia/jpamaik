@@ -2,6 +2,7 @@ package com.laganga.usuarios.services;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -13,17 +14,11 @@ import com.laganga.usuarios.repository.UsersRepository;
 
 import lombok.RequiredArgsConstructor;
 
-@Service // Crea un bean (instancia)
+@Service
 @RequiredArgsConstructor
 public class UsersService {
-    // Inyección de dependencias
-    private final UsersRepository usersRepository; // Inyectamos el repository
-    
-    /**
-     * Este metodo es para crear un usuario
-     * @param request datos del usuario a crear
-     * @return MessageResponseDTO objeto de respuesta que contiene un mensaje
-     */
+    private final UsersRepository usersRepository;
+
     public MessageResponseDTO createUser(UsersRequestDTO request) {
         MessageResponseDTO response = new MessageResponseDTO();
 
@@ -39,15 +34,65 @@ public class UsersService {
     public List<UsersResponseDTO> getUsers() {
         List<Users> usersFound = usersRepository.findAll();
         List<UsersResponseDTO> response = new ArrayList<>();
-        UsersResponseDTO user = new UsersResponseDTO();
 
         for (Users userFound : usersFound) {
+            UsersResponseDTO user = new UsersResponseDTO();
             user.setId(userFound.getId());
             user.setUsername(userFound.getUsername());
             user.setEmail(userFound.getEmail());
             response.add(user);
         }
 
+        return response;
+    }
+
+    /* filtrar/id */
+    public UsersResponseDTO getUserById(Long id) {
+        Optional<Users> userFound = usersRepository.findById(id);
+
+        if (userFound.isEmpty()) {
+            throw new RuntimeException("Usuario no encontrado");
+        }
+
+        UsersResponseDTO response = new UsersResponseDTO();
+        response.setId(userFound.get().getId());
+        response.setUsername(userFound.get().getUsername());
+        response.setEmail(userFound.get().getEmail());
+
+        return response;
+    }
+
+    /* Put */
+    public MessageResponseDTO updateUser(Long id, UsersRequestDTO request) {
+        MessageResponseDTO response = new MessageResponseDTO();
+
+        Optional<Users> userFound = usersRepository.findById(id);
+
+        if (userFound.isEmpty()) {
+            throw new RuntimeException("Usuario no encontrado");
+        }
+
+        Users user = userFound.get();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        usersRepository.save(user);
+
+        response.setMessage("Usuario actualizado correctamente");
+        return response;
+    }
+    /* Delete */
+    public MessageResponseDTO deleteUser(Long id) {
+        MessageResponseDTO response = new MessageResponseDTO();
+
+        Optional<Users> userFound = usersRepository.findById(id);
+
+        if (userFound.isEmpty()) {
+            throw new RuntimeException("Usuario no encontrado");
+        }
+
+        usersRepository.deleteById(id);
+
+        response.setMessage("Usuario eliminado correctamente");
         return response;
     }
 }
